@@ -12,17 +12,21 @@ class Board
   end
 
   def select_tile(pos)
-    return if tile[pos].bomb
+    return if self[pos].bomb
 
-    tiles_to_check = [tiles[pos]]
+    tiles_to_check = [self[pos]]
     until tiles_to_check.empty?
       tile = tiles_to_check.shift
-      tiles[pos].revealed = true
+      tile.revealed = true
 
-      # if tile.next_to_bomb?
-      #   get neighbors who are not next to bombs
-      # else
-      #   add all neighbors to tiles_to_check
+      tile.get_neighbors.each do |neighbor|
+        next if neighbor.revealed
+        if tile.nearby_bombs != 0
+          next unless neighbor.nearby_bombs.zero?
+        end
+
+        tiles_to_check << neighbor
+      end
     end
   end
 
@@ -58,11 +62,14 @@ class Board
     end
   end
 
+  #display method
+
+
 end
 
 class Tile
 
-  D_NEIGHBORS = [-1, 0, 1].repeated_permutation(2).to_a - [0, 0]
+  D_NEIGHBORS = [-1, 0, 1].repeated_permutation(2).to_a - [[0, 0]]
 
   attr_accessor :bomb, :revealed, :pos, :board
 
@@ -75,8 +82,10 @@ class Tile
     neighbors = []
 
     D_NEIGHBORS.each do |delta|
-      neighbor_pos = pos.map.with_index {|val, i| val+delta[i] }
-      next unless neighbor_pos.any? {|coord| coord.between?(0,8)}
+
+      neighbor_pos = [pos[0]+delta[0], pos[1]+delta[1]]
+
+      next unless neighbor_pos.all? {|coord| coord.between?(0,8)}
       neighbors << board[neighbor_pos]
     end
 
@@ -84,7 +93,7 @@ class Tile
   end
 
   def nearby_bombs
-    get_neighbors.select {|neighbor| neighbor.bomb}.count
+    get_neighbors.select {|neighbor| neighbor.bomb }.count
   end
 end
 
@@ -96,6 +105,20 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   b = Board.new
-  puts b[[3,3]].nearby_bombs
+  # puts b[[0,0]].nearby_bombs
+
+
+  disp = Array.new(9) {Array.new(9, "*")}
+
+  # 9.times do |i|
+  #   9.times do |j|
+  #     disp[i][j] = b[[i,j]].nearby_bombs unless b[[i,j]].nearby_bombs.zero?
+  #   end
+  # end
+  # #
+  # disp.each do |row|
+  #   print row.join
+  #   puts ''
+  # end
 
 end

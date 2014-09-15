@@ -4,7 +4,7 @@ class Board
 
   attr_accessor :tiles
 
-  def initialize(bomb_count = 10)
+  def initialize(bomb_count = 20)
     @tiles = Array.new(9) {Array.new(9)}
     @bomb_count = bomb_count
     create_tiles
@@ -12,15 +12,15 @@ class Board
   end
 
   def select_tile(pos)
-    return if self[pos].bomb
 
     tiles_to_check = [self[pos]]
     until tiles_to_check.empty?
       tile = tiles_to_check.shift
+
       tile.revealed = true
 
       tile.get_neighbors.each do |neighbor|
-        next if neighbor.revealed
+        next if neighbor.revealed || neighbor.bomb || neighbor.flagged
         if tile.nearby_bombs != 0
           next unless neighbor.nearby_bombs.zero?
         end
@@ -28,6 +28,7 @@ class Board
         tiles_to_check << neighbor
       end
     end
+
   end
 
   def [](pos)
@@ -71,11 +72,12 @@ class Tile
 
   D_NEIGHBORS = [-1, 0, 1].repeated_permutation(2).to_a - [[0, 0]]
 
-  attr_accessor :bomb, :revealed, :pos, :board
+  attr_accessor :bomb, :revealed, :pos, :board, :flagged
 
   def initialize(pos, board, bomb = false)
     @board, @bomb, @revealed = board, bomb, false
     @pos = pos
+    @flagged = false
   end
 
   def get_neighbors
@@ -98,27 +100,51 @@ class Tile
 end
 
 class Game
-end
 
-class Player
+  attr_accessor :board
+
+  def initialize(bombs = 20)
+    @board = Board.new(bombs)
+  end
+
+  def over?
+    won? || lost?
+  end
+
+  def won?
+    tile_list = board.tiles.inject([]) { |accum, row| accum + row }
+    tile_list.all? { |tile| tile.revealed ^ tile.bomb }
+  end
+
+  def lost?
+    tile_list = board.tiles.inject([]) { |accum, row| accum + row }
+    tile_list.any? { |tile| tile.revealed && tile.bomb }
+  end
+
 end
 
 if __FILE__ == $PROGRAM_NAME
   b = Board.new
-  # puts b[[0,0]].nearby_bombs
+  b.select_tile([1,2])
 
 
-  disp = Array.new(9) {Array.new(9, "*")}
+  disp = Array.new(9) {Array.new(9, ".")}
 
-  # 9.times do |i|
-  #   9.times do |j|
-  #     disp[i][j] = b[[i,j]].nearby_bombs unless b[[i,j]].nearby_bombs.zero?
-  #   end
-  # end
+  9.times do |i|
+    9.times do |j|
+      disp[i][j] = "R" if b[[i,j]].revealed
+      disp[i][j] = "B" if b[[i,j]].revealed && b[[i,j]].bomb
+
+      if b[[i,j]].revealed && b[[i,j]].nearby_bombs > 0
+        disp[i][j] = "#{b[[i,j]].nearby_bombs}"
+      end
+
+    end
+  end
   # #
-  # disp.each do |row|
-  #   print row.join
-  #   puts ''
-  # end
+  disp.each do |row|
+    print row.join(' ')
+    puts ''
+  end
 
 end

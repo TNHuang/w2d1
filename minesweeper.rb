@@ -1,6 +1,10 @@
 class Board
+  def self.create_tiles
+    Array.new(9) {Array.new(9) { Tile.new }}
+  end
+
   def initialize
-    @tile = Array.new(9) {Array.new(9, nil)}
+    @tiles = Board.create_tiles
   end
 
 end

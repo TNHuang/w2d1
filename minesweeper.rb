@@ -4,8 +4,10 @@ class Board
 
   attr_accessor :tiles
 
-  def initialize(bomb_count = 20)
-    @tiles, @bomb_count = create_tiles, bomb_count
+  def initialize(bomb_count = 10)
+    @tiles = Array.new(9) {Array.new(9)}
+    @bomb_count = bomb_count
+    create_tiles
     seed_bombs
   end
 
@@ -25,18 +27,24 @@ class Board
   end
 
   def [](pos)
-    i, j = pos[0], pos[1]
+    i, j = pos
     tiles[i][j]
   end
 
   def []=(pos, value)
-    i, j = pos[0], pos[1]
+    i, j = pos
     tiles[i][j] = value
   end
 
   protected
   def create_tiles
-    Array.new(9) {Array.new(9) { Tile.new(self) }}
+    tiles = []
+    9.times do |i|
+      9.times do |j|
+        self[[i,j]] = Tile.new([i,j], self);
+      end
+    end
+
   end
 
   def seed_bombs
@@ -53,12 +61,31 @@ class Board
 end
 
 class Tile
-  attr_accessor :bomb, :revealed
 
-  def initialize(board, bomb = false)
+  D_NEIGHBORS = [-1, 0, 1].repeated_permutation(2).to_a - [0, 0]
+
+  attr_accessor :bomb, :revealed, :pos, :board
+
+  def initialize(pos, board, bomb = false)
     @board, @bomb, @revealed = board, bomb, false
+    @pos = pos
   end
 
+  def get_neighbors
+    neighbors = []
+
+    D_NEIGHBORS.each do |delta|
+      neighbor_pos = pos.map.with_index {|val, i| val+delta[i] }
+      next unless neighbor_pos.any? {|coord| coord.between?(0,8)}
+      neighbors << board[neighbor_pos]
+    end
+
+    neighbors
+  end
+
+  def nearby_bombs
+    get_neighbors.select {|neighbor| neighbor.bomb}.count
+  end
 end
 
 class Game
@@ -69,5 +96,6 @@ end
 
 if __FILE__ == $PROGRAM_NAME
   b = Board.new
-  puts b.tiles
+  puts b[[3,3]].nearby_bombs
+
 end

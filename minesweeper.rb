@@ -120,6 +120,10 @@ class Game
 
   attr_accessor :board
 
+  def self.load_game(file_name)
+    YAML.load(File.read(file_name))
+  end
+
   def initialize(bombs = 20)
     @board = Board.new(bombs)
   end
@@ -145,7 +149,6 @@ class Game
         save_game
         break
       end
-
     end
 
     recap
@@ -177,12 +180,18 @@ class Game
 
   def recap
     board.draw
-    puts won? ? "Congratulations! You win!" : "BOOM!"
+    if won?
+      puts "Congratulations! You win!"
+    elsif lost?
+      puts "BOOM!"
+    else
+      puts "Game saved."
+    end
   end
 
 end
 
 if __FILE__ == $PROGRAM_NAME
-  game = Game.new(20)
+  game = ARGV.empty? ? Game.new : Game.load_game(ARGV[0])
   game.play
 end

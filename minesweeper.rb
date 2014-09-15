@@ -1,4 +1,5 @@
 #! /usr/bin/env ruby
+require 'yaml'
 
 class Board
 
@@ -130,22 +131,35 @@ class Game
       matches = nil
       while matches.nil?
         response = get_input
+
         matches = /(r|f)\((\d),(\d)\)/.match(response)
+        matches = /s/.match(response) if matches.nil?
       end
 
       pos = [matches[2].to_i, matches[3].to_i]
-      if matches[1] == 'f'
+      if matches[1] == ?f
         board[pos].flagged = true
-      elsif matches[1] == 'r'
+      elsif matches[1] == ?r
         board.select_tile(pos)
+      else
+        save_game
+        break
       end
+
     end
 
     recap
   end
 
+  def save_game
+    p "running"
+    File.open('minesweeper_save.yaml', "w") do |f|
+      f.write self.to_yaml
+    end
+  end
+
   def get_input
-    print "flag or reveal a tile? (eg f(1,2)): "
+    print "flag or reveal a tile, or save game(s)? (eg f(1,2)): "
     gets.strip
   end
 

@@ -107,6 +107,31 @@ class Game
     @board = Board.new(bombs)
   end
 
+  def play
+    until over?
+
+      matches = nil
+
+      while matches.nil?
+        response = get_input
+        matches = /(r|f)\((\d),(\d)\)/.match(response)
+      end
+
+      pos = [matches[2].to_i, matches[3].to_i]
+      if matches[1] == 'f'
+        board[pos].flagged = true
+      elsif macthes[1] == 'r'
+        board.select_tile(pos)
+      end
+
+    end
+  end
+
+  def get_input
+    print "flag or reveal a tile? (eg f(1,2)): "
+    gets.strip
+  end
+
   def over?
     won? || lost?
   end

@@ -1,4 +1,6 @@
 #! /usr/bin/env ruby
+#encoding: utf-8
+
 require 'yaml'
 
 class Board
@@ -49,14 +51,14 @@ class Board
 
     SIZE.times do |i|
       SIZE.times do |j|
-        disp[i][j] = "F" if self[[i,j]].flagged
-        disp[i][j] = "R" if self[[i,j]].revealed
+        disp[i][j] = "\u{2691}" if self[[i,j]].flagged
+        disp[i][j] = " " if self[[i,j]].revealed
 
         if self[[i,j]].revealed && self[[i,j]].nearby_bombs > 0
           disp[i][j] = "#{self[[i,j]].nearby_bombs}"
         end
 
-        disp[i][j] = "B" if self[[i,j]].revealed && self[[i,j]].bomb
+        disp[i][j] = "\u{1F4A3}" if self[[i,j]].revealed && self[[i,j]].bomb
       end
     end
 
@@ -178,7 +180,14 @@ class Game
     board.tiles.flatten.any? { |tile| tile.revealed && tile.bomb }
   end
 
+
   def recap
+    Board::SIZE.times do |row_i|
+      Board::SIZE.times do |col_j|
+        board[[row_i,col_j]].revealed = true
+      end
+    end
+
     board.draw
     if won?
       puts "Congratulations! You win!"
@@ -192,6 +201,7 @@ class Game
 end
 
 if __FILE__ == $PROGRAM_NAME
-  game = ARGV.empty? ? Game.new : Game.load_game(ARGV.pop)
+  # game = ARGV.empty? ? Game.new : Game.load_game(ARGV.pop)
+  game = Game.new(12)
   game.play
 end

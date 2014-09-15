@@ -2,10 +2,12 @@
 
 class Board
 
+  SIZE = 9
+
   attr_accessor :tiles
 
   def initialize(bomb_count = 20)
-    @tiles = Array.new(9) {Array.new(9)}
+    @tiles = Array.new(SIZE) {Array.new(SIZE)}
     @bomb_count = bomb_count
     create_tiles
     seed_bombs
@@ -41,12 +43,33 @@ class Board
     tiles[i][j] = value
   end
 
+  def draw
+    disp = Array.new(SIZE) {Array.new(SIZE, ".")}
+
+    SIZE.times do |i|
+      SIZE.times do |j|
+        disp[i][j] = "F" if self[[i,j]].flagged
+        disp[i][j] = "R" if self[[i,j]].revealed
+
+        if self[[i,j]].revealed && self[[i,j]].nearby_bombs > 0
+          disp[i][j] = "#{self[[i,j]].nearby_bombs}"
+        end
+
+        disp[i][j] = "B" if self[[i,j]].revealed && self[[i,j]].bomb
+      end
+    end
+
+    puts "# #{(0...SIZE).to_a.join(' ')}"
+    disp.each_with_index do |row, index|
+      puts "#{index} #{row.join(' ')}"
+    end
+  end
+
   protected
   def create_tiles
-    tiles = []
-    9.times do |i|
-      9.times do |j|
-        self[[i,j]] = Tile.new([i,j], self);
+    SIZE.times do |i|
+      SIZE.times do |j|
+        self[[i, j]] = Tile.new([i, j], self);
       end
     end
 
@@ -54,18 +77,14 @@ class Board
 
   def seed_bombs
     until @bomb_count.zero?
-      i, j = rand(0...@tiles.count), rand(0...@tiles.count)
-      next if self.tiles[i][j].bomb
+      pos = [rand(0...SIZE), rand(0...SIZE)]
+      next if self[pos].bomb
 
-      self.tiles[i][j].bomb = true
+      self[pos].bomb = true
 
       @bomb_count -= 1
     end
   end
-
-  #display method
-
-
 end
 
 class Tile
@@ -75,19 +94,16 @@ class Tile
   attr_accessor :bomb, :revealed, :pos, :board, :flagged
 
   def initialize(pos, board, bomb = false)
-    @board, @bomb, @revealed = board, bomb, false
-    @pos = pos
-    @flagged = false
+    @pos, @board, @bomb = pos, board, bomb
+    @revealed, @flagged = false, false
   end
 
   def get_neighbors
     neighbors = []
 
     D_NEIGHBORS.each do |delta|
-
-      neighbor_pos = [pos[0]+delta[0], pos[1]+delta[1]]
-
-      next unless neighbor_pos.all? {|coord| coord.between?(0,8)}
+      neighbor_pos = [pos[0] + delta[0], pos[1] + delta[1]]
+      next unless neighbor_pos.all? {|coord| coord.between?(0, Board::SIZE - 1)}
       neighbors << board[neighbor_pos]
     end
 
@@ -109,9 +125,9 @@ class Game
 
   def play
     until over?
+      board.draw
 
       matches = nil
-
       while matches.nil?
         response = get_input
         matches = /(r|f)\((\d),(\d)\)/.match(response)
@@ -120,11 +136,12 @@ class Game
       pos = [matches[2].to_i, matches[3].to_i]
       if matches[1] == 'f'
         board[pos].flagged = true
-      elsif macthes[1] == 'r'
+      elsif matches[1] == 'r'
         board.select_tile(pos)
       end
-
     end
+
+    recap
   end
 
   def get_input
@@ -137,39 +154,21 @@ class Game
   end
 
   def won?
-    tile_list = board.tiles.inject([]) { |accum, row| accum + row }
-    tile_list.all? { |tile| tile.revealed ^ tile.bomb }
+    board.tiles.flatten.all? { |tile| tile.revealed ^ tile.bomb }
   end
 
   def lost?
-    tile_list = board.tiles.inject([]) { |accum, row| accum + row }
-    tile_list.any? { |tile| tile.revealed && tile.bomb }
+    board.tiles.flatten.any? { |tile| tile.revealed && tile.bomb }
+  end
+
+  def recap
+    board.draw
+    puts won? ? "Congratulations! You win!" : "BOOM!"
   end
 
 end
 
 if __FILE__ == $PROGRAM_NAME
-  b = Board.new
-  b.select_tile([1,2])
-
-
-  disp = Array.new(9) {Array.new(9, ".")}
-
-  9.times do |i|
-    9.times do |j|
-      disp[i][j] = "R" if b[[i,j]].revealed
-      disp[i][j] = "B" if b[[i,j]].revealed && b[[i,j]].bomb
-
-      if b[[i,j]].revealed && b[[i,j]].nearby_bombs > 0
-        disp[i][j] = "#{b[[i,j]].nearby_bombs}"
-      end
-
-    end
-  end
-  # #
-  disp.each do |row|
-    print row.join(' ')
-    puts ''
-  end
-
+  game = Game.new(20)
+  game.play
 end

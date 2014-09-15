@@ -192,6 +192,6 @@ class Game
 end
 
 if __FILE__ == $PROGRAM_NAME
-  game = ARGV.empty? ? Game.new : Game.load_game(ARGV[0])
+  game = ARGV.empty? ? Game.new : Game.load_game(ARGV.pop)
   game.play
 end
